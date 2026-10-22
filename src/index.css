@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-canvas: #131314;
+    --bg-surface: #1E1F20;
+    --bg-surface-elevated: #282A2C;
+    --bg-surface-hover: #333538;
+    --border-subtle: #333538;
+    --border-divider: #282A2C;
+    --accent-blue: #A8C7FA;
+    --accent-blue-hover: #7DACF8;
+    --accent-cyan: #43D9CC;
+    --text-primary: #E3E3E3;
+    --text-secondary: #C4C7C5;
+    --text-muted: #8E918F;
+  }
+
+  body {
+    background-color: #131314;
+    color: #E3E3E3;
+    font-family: 'DM Sans', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0;
+  }
+}
+
+/* Google AI Studio sleek subtle scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333538;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444746;
+}
+
+/* Touch targets and interactions */
+input, select, textarea, button {
+  touch-action: manipulation;
+}

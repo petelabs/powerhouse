@@ -1,0 +1,6 @@
+{
+  "name": "Powerhouse",
+  "description": "Personal AI coding workspace designed for mobile and desktop developers. Connect GitHub repositories, dispatch coding tasks with specialized AI agents, inspect reviewable diffs, and manage projects on the go.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
