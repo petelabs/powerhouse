@@ -14,8 +14,6 @@ import {
   BrainCircuit,
   Copy,
   Check,
-  ChevronDown,
-  Sparkles,
   Loader2,
   Cpu
 } from 'lucide-react';
@@ -45,12 +43,11 @@ interface WorkspaceViewProps {
 }
 
 const AVAILABLE_MODELS = [
-  { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (Recommended)', badge: 'Free Tier' },
-  { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro', badge: 'High Intelligence' },
-  { id: 'gemini-1.5-flash', label: 'gemini-1.5-flash', badge: 'Lightweight' },
-  { id: 'gemini-1.5-pro', label: 'gemini-1.5-pro', badge: 'Deep Context' },
-  { id: 'gemini-3.5-flash', label: 'gemini-3.5-flash', badge: 'Preview' },
-  { id: 'gemini-3.8-flash', label: 'gemini-3.8-flash', badge: 'Experimental' },
+  { id: 'gemini-3.8-flash', label: 'gemini-3.8-flash (Recommended)', badge: 'Free Tier' },
+  { id: 'gemini-4-argon', label: 'gemini-4-argon', badge: 'Frontier Reasoning' },
+  { id: 'gemini-3.1-flash-lite', label: 'gemini-3.1-flash-lite', badge: 'Speed Optimized' },
+  { id: 'gemini-3.5-flash', label: 'gemini-3.5-flash', badge: 'General Multimodal' },
+  { id: 'gemini-flash-latest', label: 'gemini-flash-latest', badge: 'Auto-Updated' },
 ];
 
 export function WorkspaceView({
@@ -70,7 +67,7 @@ export function WorkspaceView({
   const [personality, setPersonality] = useState<PersonalityId>('builder');
   const [mode, setMode] = useState<TaskMode>('implement');
   const [thinkingEnabled, setThinkingEnabled] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<string>('gemini-2.5-flash');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-3.8-flash');
   const [activeTab, setActiveTab] = useState<'brief' | 'diff' | 'timeline' | 'report'>('timeline');
   const [copiedCode, setCopiedCode] = useState(false);
 

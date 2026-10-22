@@ -111,9 +111,9 @@ export class TaskManager {
       ? params.prompt.slice(0, 57) + '...'
       : params.prompt;
 
-    const chosenModel = params.selectedModel || 'gemini-2.5-flash';
+    const chosenModel = params.selectedModel || 'gemini-3.8-flash';
     const modelDisplay = params.thinkingEnabled 
-      ? `${chosenModel} (Thinking: High)` 
+      ? `${chosenModel} (High Thinking)` 
       : chosenModel;
 
     const task: CodingTask = {
@@ -154,7 +154,7 @@ export class TaskManager {
     return task;
   }
 
-  private static async runTask(taskId: string, requestedModelName: string = 'gemini-2.5-flash') {
+  private static async runTask(taskId: string, requestedModelName: string = 'gemini-3.8-flash') {
     const task = tasksStore[taskId];
     if (!task || task.status === 'cancelled') return;
 
@@ -288,7 +288,7 @@ export class TaskManager {
       this.addEvent(task, {
         stage: 'ai_reasoning',
         level: 'stage',
-        message: `Step 6/8: ${requestedModelName} ${task.thinkingEnabled ? '(Thinking Budget: 2048)' : '(Standard)'} reasoning actively with ${task.personality.toUpperCase()} personality...`,
+        message: `Step 6/8: ${requestedModelName} ${task.thinkingEnabled ? '(High Thinking)' : '(Standard)'} reasoning actively with ${task.personality.toUpperCase()} personality...`,
         details: `Evaluating repository context, dependency contracts, and task requirements.`,
       });
 

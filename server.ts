@@ -27,54 +27,46 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// Models list endpoint
+// Current Active Gemini Models List Endpoint
 app.get('/api/models', (_req: Request, res: Response) => {
   res.json([
     {
-      id: 'gemini-2.5-flash',
-      name: 'Gemini 2.5 Flash',
-      description: 'Fast, reliable, highly capable reasoning model.',
+      id: 'gemini-3.8-flash',
+      name: 'Gemini 3.8 Flash',
+      description: 'Flagship high-throughput general purpose model for coding and fast reasoning.',
       tier: 'Free Tier (Recommended)',
       recommended: true,
       supportsThinking: true,
     },
     {
-      id: 'gemini-2.5-pro',
-      name: 'Gemini 2.5 Pro',
-      description: 'Advanced reasoning for complex architectural tasks.',
-      tier: 'High Intelligence',
+      id: 'gemini-4-argon',
+      name: 'Gemini 4 Argon',
+      description: 'Premier frontier reasoning model for complex architectural planning and heavy coding.',
+      tier: 'Frontier Intelligence',
       recommended: false,
       supportsThinking: true,
     },
     {
-      id: 'gemini-1.5-flash',
-      name: 'Gemini 1.5 Flash',
-      description: 'Ultra-fast lightweight model for quick edits.',
+      id: 'gemini-3.1-flash-lite',
+      name: 'Gemini 3.1 Flash Lite',
+      description: 'Ultra-fast low-latency model for quick edits and rapid reviews.',
       tier: 'Speed Optimized',
-      recommended: false,
-      supportsThinking: false,
-    },
-    {
-      id: 'gemini-1.5-pro',
-      name: 'Gemini 1.5 Pro',
-      description: 'Large context window for deep repository analysis.',
-      tier: 'Deep Context',
       recommended: false,
       supportsThinking: false,
     },
     {
       id: 'gemini-3.5-flash',
       name: 'Gemini 3.5 Flash',
-      description: 'Next-gen preview model for experimental workloads.',
-      tier: 'Preview',
+      description: 'High performance general purpose multimodal model.',
+      tier: 'General Multimodal',
       recommended: false,
       supportsThinking: true,
     },
     {
-      id: 'gemini-3.8-flash',
-      name: 'Gemini 3.8 Flash',
-      description: 'High performance flash model.',
-      tier: 'Experimental',
+      id: 'gemini-flash-latest',
+      name: 'Gemini Flash Latest',
+      description: 'Automatically routes to the latest stable Gemini Flash endpoint.',
+      tier: 'Auto-Updated',
       recommended: false,
       supportsThinking: true,
     },
@@ -182,7 +174,7 @@ app.post('/api/tasks', (req: Request, res: Response) => {
     personality: personality || 'builder',
     mode: mode || 'implement',
     thinkingEnabled: !!thinkingEnabled,
-    selectedModel: model,
+    selectedModel: model || 'gemini-3.8-flash',
   });
 
   res.status(201).json(task);

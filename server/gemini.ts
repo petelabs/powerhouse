@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import { PersonalityId, TaskMode, FileChange } from '../src/types/index.js';
 import { computeSimpleDiff } from './diff.js';
 
@@ -53,7 +53,7 @@ export interface GeminiTaskResponse {
 export class GeminiService {
   static async executeTask(req: GeminiTaskRequest): Promise<GeminiTaskResponse> {
     const personalityInstruction = PERSONALITY_PROMPTS[req.personality] || PERSONALITY_PROMPTS.builder;
-    const modelName = req.requestedModel || 'gemini-2.5-flash';
+    const modelName = req.requestedModel || 'gemini-3.8-flash';
 
     let modeInstruction = '';
     if (req.mode === 'ask') {
@@ -118,12 +118,12 @@ ${modeInstruction}`;
 
     if (req.thinkingEnabled) {
       config.thinkingConfig = {
-        thinkingBudget: 2048,
+        thinkingLevel: ThinkingLevel.HIGH,
       };
     }
 
     let responseText = '';
-    const usedModelDisplay = req.thinkingEnabled ? `${modelName} (Thinking: High)` : modelName;
+    const usedModelDisplay = req.thinkingEnabled ? `${modelName} (High Thinking)` : modelName;
 
     try {
       const response = await ai.models.generateContent({
@@ -134,10 +134,10 @@ ${modeInstruction}`;
       responseText = response.text || '';
     } catch (err: any) {
       console.warn(`Error invoking model ${modelName}:`, err?.message || err);
-      // Fallback to gemini-2.5-flash without thinkingConfig if requested model hits error
+      // Primary fallback: gemini-3.8-flash (General Purpose Flagship) or gemini-flash-latest
       try {
         const fallbackResponse = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3.8-flash',
           contents: userContent,
           config: {
             systemInstruction: personalityInstruction,
@@ -146,7 +146,20 @@ ${modeInstruction}`;
         });
         responseText = fallbackResponse.text || '';
       } catch (fallbackErr: any) {
-        throw new Error(`Gemini API Error: ${err?.message || fallbackErr?.message || 'Model execution failed'}`);
+        // Secondary fallback: gemini-flash-latest
+        try {
+          const latestResponse = await ai.models.generateContent({
+            model: 'gemini-flash-latest',
+            contents: userContent,
+            config: {
+              systemInstruction: personalityInstruction,
+              temperature: 0.2,
+            },
+          });
+          responseText = latestResponse.text || '';
+        } catch (finalErr: any) {
+          throw new Error(`Gemini API Error (${modelName}): ${err?.message || finalErr?.message || 'Model execution failed'}`);
+        }
       }
     }
 

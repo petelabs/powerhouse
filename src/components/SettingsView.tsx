@@ -358,21 +358,21 @@ export function SettingsView({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3 bg-[#131314] border border-[#333538] rounded-lg">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[#A8C7FA] font-medium font-mono">gemini-2.5-flash</span>
+              <span className="text-[#A8C7FA] font-medium font-mono">gemini-3.8-flash</span>
               <span className="text-[10px] bg-[#004A77] text-[#D3E3FD] px-1.5 py-0.5 rounded font-mono">Recommended</span>
             </div>
             <p className="text-xs text-[#C4C7C5] leading-relaxed">
-              Recommended for free tier. Fast, highly reliable, and supports <code className="text-[#A8C7FA]">thinkingBudget: 2048</code> for complex code synthesis.
+              Flagship high-throughput general purpose model for coding, rapid refactoring, and multi-file code synthesis.
             </p>
           </div>
 
           <div className="p-3 bg-[#131314] border border-[#333538] rounded-lg">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-emerald-400 font-medium font-mono">gemini-2.5-pro</span>
-              <span className="text-[10px] bg-emerald-950/50 text-emerald-300 px-1.5 py-0.5 rounded font-mono">High Intelligence</span>
+              <span className="text-emerald-400 font-medium font-mono">gemini-4-argon</span>
+              <span className="text-[10px] bg-emerald-950/50 text-emerald-300 px-1.5 py-0.5 rounded font-mono">Frontier Intelligence</span>
             </div>
             <p className="text-xs text-[#C4C7C5] leading-relaxed">
-              Advanced reasoning for deep multi-file architectural planning and complex debugging.
+              Google's premier frontier reasoning model for complex software engineering and deep multi-step architecture.
             </p>
           </div>
         </div>
