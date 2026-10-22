@@ -6,10 +6,13 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Square, 
-  ArrowRight,
-  GitBranch,
-  RefreshCw,
-  FileCode
+  ArrowRight, 
+  GitBranch, 
+  RefreshCw, 
+  FileCode,
+  Trash2,
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 import { CodingTask } from '../types';
 
@@ -17,6 +20,7 @@ interface TasksViewProps {
   tasks: CodingTask[];
   onSelectTask: (task: CodingTask) => void;
   onCancelTask: (taskId: string) => void;
+  onDeleteTask?: (taskId: string) => void;
   onRefresh: () => void;
 }
 
@@ -24,6 +28,7 @@ export function TasksView({
   tasks,
   onSelectTask,
   onCancelTask,
+  onDeleteTask,
   onRefresh,
 }: TasksViewProps) {
   const [search, setSearch] = useState('');
@@ -46,10 +51,10 @@ export function TasksView({
         <div>
           <h1 className="text-2xl font-semibold text-[#F0F4F9] tracking-tight flex items-center gap-2">
             <CheckSquare size={22} className="text-[#A8C7FA]" />
-            <span>Task Queue & History</span>
+            <span>Task Queue & Device History</span>
           </h1>
           <p className="text-xs text-[#8E918F] mt-1">
-            Durable task records persisted across sessions, browser reloads, and phone locks.
+            Durable task runs preserved locally on device and synced with backend worker.
           </p>
         </div>
 
@@ -58,7 +63,7 @@ export function TasksView({
           className="px-3 py-1.5 bg-[#1E1F20] hover:bg-[#282A2C] border border-[#333538] rounded-md text-xs text-[#C4C7C5] hover:text-white transition flex items-center gap-1.5 self-start font-medium"
         >
           <RefreshCw size={13} />
-          <span>Refresh</span>
+          <span>Sync Device</span>
         </button>
       </div>
 
@@ -100,7 +105,9 @@ export function TasksView({
           <CheckSquare size={36} className="mx-auto text-[#8E918F] mb-2" />
           <h3 className="text-sm font-medium text-[#F0F4F9]">No Tasks Found</h3>
           <p className="text-xs text-[#8E918F] mt-1">
-            Try adjusting your search criteria or create a new task in the workspace.
+            {tasks.length === 0 
+              ? 'Your device history is empty. Start your first task from Overview or Workspace.'
+              : 'No tasks match your search filter.'}
           </p>
         </div>
       ) : (
@@ -120,13 +127,14 @@ export function TasksView({
                   className="flex-1 cursor-pointer space-y-1"
                 >
                   <div className="flex items-center gap-2">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-mono ${
-                      task.status === 'running' ? 'bg-[#004A77] text-[#D3E3FD]' :
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-mono flex items-center gap-1 ${
+                      isRunning ? 'bg-[#004A77] text-[#D3E3FD]' :
                       task.status === 'succeeded' ? 'bg-emerald-950/50 text-emerald-300' :
                       task.status === 'failed' ? 'bg-rose-950/50 text-rose-300' :
                       'bg-[#131314] text-[#8E918F]'
                     }`}>
-                      {task.status}
+                      {isRunning && <Loader2 size={10} className="animate-spin text-[#A8C7FA]" />}
+                      <span>{task.status}</span>
                     </span>
 
                     <span className="text-[11px] capitalize text-[#A8C7FA] font-medium">
@@ -138,43 +146,65 @@ export function TasksView({
                     </span>
                   </div>
 
-                  <h3 className="text-xs sm:text-sm font-semibold text-[#E3E3E3] group-hover:text-[#A8C7FA] transition">
+                  <h3 className="text-xs font-semibold text-[#E3E3E3] line-clamp-1">
                     {task.title}
                   </h3>
 
-                  <div className="flex items-center gap-2 text-xs text-[#8E918F]">
-                    <GitBranch size={12} className="text-[#A8C7FA]" />
-                    <span className="font-mono">{task.repo} : {task.branch}</span>
-                    {task.proposedChanges?.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#8E918F]">
+                    <span className="font-mono text-[#C4C7C5]">{task.repo}</span>
+                    <span>·</span>
+                    <span className="font-mono text-[#A8C7FA]">{task.branch}</span>
+                    <span>·</span>
+                    <span>{task.events?.length || 0} steps executed</span>
+                    {task.proposedChanges && task.proposedChanges.length > 0 && (
                       <>
                         <span>·</span>
-                        <span className="text-emerald-400 font-mono flex items-center gap-1">
-                          <FileCode size={11} />
-                          {task.proposedChanges.length} file(s)
+                        <span className="text-emerald-400 font-mono">
+                          +{task.proposedChanges.length} file(s) patched
                         </span>
                       </>
                     )}
                   </div>
                 </div>
 
-                {/* Right Actions */}
-                <div className="flex items-center gap-2 self-end sm:self-center">
+                {/* Actions */}
+                <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
                   {isRunning ? (
                     <button
-                      onClick={() => onCancelTask(task.id)}
-                      className="px-3 py-1.5 bg-[#3C1E20] hover:bg-[#5C2B2E] border border-[#F2B8B5]/30 text-[#F2B8B5] rounded-md text-xs transition"
+                      onClick={e => {
+                        e.stopPropagation();
+                        onCancelTask(task.id);
+                      }}
+                      className="px-2.5 py-1 bg-[#3C1E20] hover:bg-[#5C2B2E] border border-[#F2B8B5]/30 text-[#F2B8B5] rounded text-xs transition flex items-center gap-1"
                     >
-                      Cancel
+                      <Square size={11} className="fill-[#F2B8B5]" />
+                      <span>Cancel</span>
                     </button>
                   ) : (
-                    <button
-                      onClick={() => onSelectTask(task)}
-                      className="px-3 py-1.5 bg-[#131314] hover:bg-[#282A2C] border border-[#333538] rounded-md text-xs text-[#E3E3E3] flex items-center gap-1.5 transition font-medium"
-                    >
-                      <span>Inspect</span>
-                      <ArrowRight size={13} />
-                    </button>
+                    <>
+                      {onDeleteTask && (
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (window.confirm('Delete this task record from device?')) {
+                              onDeleteTask(task.id);
+                            }
+                          }}
+                          className="p-1.5 text-[#8E918F] hover:text-[#F2B8B5] hover:bg-[#3C1E20]/50 rounded transition"
+                          title="Delete from device"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </>
                   )}
+
+                  <button
+                    onClick={() => onSelectTask(task)}
+                    className="p-1.5 text-[#8E918F] group-hover:text-[#A8C7FA] transition"
+                  >
+                    <ArrowRight size={14} />
+                  </button>
                 </div>
               </div>
             );

@@ -1,4 +1,4 @@
-import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { PersonalityId, TaskMode, FileChange } from '../src/types/index.js';
 import { computeSimpleDiff } from './diff.js';
 
@@ -37,6 +37,7 @@ export interface GeminiTaskRequest {
   fileContexts: Record<string, string>;
   projectMemorySummary: string;
   thinkingEnabled?: boolean;
+  requestedModel?: string;
 }
 
 export interface GeminiTaskResponse {
@@ -52,9 +53,7 @@ export interface GeminiTaskResponse {
 export class GeminiService {
   static async executeTask(req: GeminiTaskRequest): Promise<GeminiTaskResponse> {
     const personalityInstruction = PERSONALITY_PROMPTS[req.personality] || PERSONALITY_PROMPTS.builder;
-    
-    // Choose model based on thinking requirement
-    let modelName = req.thinkingEnabled ? 'gemini-4-argon' : 'gemini-3.8-flash';
+    const modelName = req.requestedModel || 'gemini-2.5-flash';
 
     let modeInstruction = '';
     if (req.mode === 'ask') {
@@ -117,15 +116,14 @@ ${modeInstruction}`;
       temperature: 0.2,
     };
 
-    if (req.thinkingEnabled && modelName === 'gemini-4-argon') {
+    if (req.thinkingEnabled) {
       config.thinkingConfig = {
-        thinkingLevel: ThinkingLevel.HIGH,
+        thinkingBudget: 2048,
       };
-      // Do NOT set maxOutputTokens per instructions!
     }
 
     let responseText = '';
-    let usedModel = modelName;
+    const usedModelDisplay = req.thinkingEnabled ? `${modelName} (Thinking: High)` : modelName;
 
     try {
       const response = await ai.models.generateContent({
@@ -135,23 +133,20 @@ ${modeInstruction}`;
       });
       responseText = response.text || '';
     } catch (err: any) {
-      console.warn(`Error invoking ${modelName}:`, err?.message || err);
-      // If gemini-4-argon failed (e.g. key permissions or rate limits), fall back to gemini-3.8-flash
-      if (modelName !== 'gemini-3.8-flash') {
-        console.log('Falling back to gemini-3.8-flash...');
-        usedModel = 'gemini-3.8-flash';
-        const fallbackConfig: any = {
-          systemInstruction: personalityInstruction,
-          temperature: 0.2,
-        };
+      console.warn(`Error invoking model ${modelName}:`, err?.message || err);
+      // Fallback to gemini-2.5-flash without thinkingConfig if requested model hits error
+      try {
         const fallbackResponse = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-2.5-flash',
           contents: userContent,
-          config: fallbackConfig,
+          config: {
+            systemInstruction: personalityInstruction,
+            temperature: 0.2,
+          },
         });
         responseText = fallbackResponse.text || '';
-      } else {
-        throw err;
+      } catch (fallbackErr: any) {
+        throw new Error(`Gemini API Error: ${err?.message || fallbackErr?.message || 'Model execution failed'}`);
       }
     }
 
@@ -194,7 +189,7 @@ ${modeInstruction}`;
     return {
       summary,
       rawText: responseText,
-      modelUsed: usedModel,
+      modelUsed: usedModelDisplay,
       files: fileChanges,
       commands,
       testSummary,

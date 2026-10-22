@@ -1,22 +1,19 @@
 import React from 'react';
 import { 
   GitBranch, 
-  Layers, 
   ChevronDown, 
   Sparkles,
   Wifi,
-  Github,
-  CheckCircle2
+  Github
 } from 'lucide-react';
 import { RepoItem, GitHubAccountStatus } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavbarProps {
   currentRepo: RepoItem | null;
   currentBranch: string;
   githubStatus: GitHubAccountStatus;
   dataSaver: boolean;
-  onToggle3D: () => void;
-  show3D: boolean;
   onSelectRepoClick: () => void;
 }
 
@@ -25,13 +22,11 @@ export function Navbar({
   currentBranch,
   githubStatus,
   dataSaver,
-  onToggle3D,
-  show3D,
   onSelectRepoClick,
 }: NavbarProps) {
   return (
     <header className="sticky top-0 z-30 bg-[#1E1F20] border-b border-[#333538] px-3 sm:px-5 py-2.5 flex items-center justify-between">
-      {/* Brand & Breadcrumbs (AI Studio Style) */}
+      {/* Brand & Breadcrumbs */}
       <div className="flex items-center gap-2.5">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#7DACF8] to-[#A8C7FA] flex items-center justify-center text-[#131314] shadow-sm">
@@ -52,35 +47,26 @@ export function Navbar({
         >
           <GitBranch size={13} className="text-[#A8C7FA] flex-shrink-0" />
           <span className="truncate font-medium">
-            {currentRepo ? currentRepo.name : 'Select Repository'}
+            {currentRepo ? currentRepo.name : (githubStatus.connected ? 'Select Repository' : 'Connect GitHub')}
           </span>
-          <span className="text-[11px] text-[#8E918F] hidden sm:inline">
-            :{currentBranch}
-          </span>
+          {currentRepo && (
+            <span className="text-[11px] text-[#8E918F] hidden sm:inline">
+              :{currentBranch}
+            </span>
+          )}
           <ChevronDown size={12} className="text-[#8E918F] flex-shrink-0" />
         </button>
       </div>
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-2.5">
-        {/* 3D Repo Matrix Toggle */}
-        <button
-          onClick={onToggle3D}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition ${
-            show3D
-              ? 'bg-[#A8C7FA] text-[#131314] font-semibold'
-              : 'bg-[#282A2C] text-[#C4C7C5] hover:text-white hover:bg-[#333538]'
-          }`}
-          title="Toggle 3D Repository Topology"
-        >
-          <Layers size={13} />
-          <span className="hidden sm:inline">3D View</span>
-        </button>
+        {/* PWA Install Button */}
+        <PWAInstallButton compact />
 
         {/* Data Saver Status */}
         {dataSaver && (
           <div
-            className="hidden md:flex items-center gap-1 text-[11px] text-[#43D9CC] bg-[#43D9CC]/10 border border-[#43D9CC]/20 px-2 py-1 rounded-full"
+            className="hidden sm:flex items-center gap-1 text-[11px] text-[#43D9CC] bg-[#43D9CC]/10 border border-[#43D9CC]/20 px-2 py-0.5 rounded-full"
             title="Data Saver Active"
           >
             <Wifi size={11} />
@@ -89,7 +75,7 @@ export function Navbar({
         )}
 
         {/* GitHub Account Badge */}
-        <div className="flex items-center pl-1">
+        <div className="flex items-center">
           {githubStatus.connected ? (
             <div className="flex items-center gap-1.5 bg-[#282A2C] border border-[#333538] px-2.5 py-1 rounded-full text-xs">
               {githubStatus.avatarUrl ? (
@@ -99,17 +85,17 @@ export function Navbar({
                   className="w-4 h-4 rounded-full"
                 />
               ) : (
-                <Github size={13} className="text-[#E3E3E3]" />
+                <Github size={13} className="text-[#A8C7FA]" />
               )}
-              <span className="text-[11px] text-[#E3E3E3] font-medium hidden sm:inline">
+              <span className="font-medium text-[#E3E3E3] hidden sm:inline">
                 {githubStatus.username}
               </span>
-              <CheckCircle2 size={11} className="text-emerald-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-[11px] text-[#C4C7C5] bg-[#282A2C] border border-[#333538] px-2.5 py-1 rounded-full">
-              <Github size={12} className="text-[#8E918F]" />
-              <span className="hidden sm:inline">Sandbox</span>
+            <div className="flex items-center gap-1.5 text-xs text-[#8E918F] bg-[#131314] border border-[#333538] px-2.5 py-1 rounded-full">
+              <Github size={13} />
+              <span className="hidden sm:inline">Not Connected</span>
             </div>
           )}
         </div>

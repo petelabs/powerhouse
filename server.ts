@@ -27,6 +27,60 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
+// Models list endpoint
+app.get('/api/models', (_req: Request, res: Response) => {
+  res.json([
+    {
+      id: 'gemini-2.5-flash',
+      name: 'Gemini 2.5 Flash',
+      description: 'Fast, reliable, highly capable reasoning model.',
+      tier: 'Free Tier (Recommended)',
+      recommended: true,
+      supportsThinking: true,
+    },
+    {
+      id: 'gemini-2.5-pro',
+      name: 'Gemini 2.5 Pro',
+      description: 'Advanced reasoning for complex architectural tasks.',
+      tier: 'High Intelligence',
+      recommended: false,
+      supportsThinking: true,
+    },
+    {
+      id: 'gemini-1.5-flash',
+      name: 'Gemini 1.5 Flash',
+      description: 'Ultra-fast lightweight model for quick edits.',
+      tier: 'Speed Optimized',
+      recommended: false,
+      supportsThinking: false,
+    },
+    {
+      id: 'gemini-1.5-pro',
+      name: 'Gemini 1.5 Pro',
+      description: 'Large context window for deep repository analysis.',
+      tier: 'Deep Context',
+      recommended: false,
+      supportsThinking: false,
+    },
+    {
+      id: 'gemini-3.5-flash',
+      name: 'Gemini 3.5 Flash',
+      description: 'Next-gen preview model for experimental workloads.',
+      tier: 'Preview',
+      recommended: false,
+      supportsThinking: true,
+    },
+    {
+      id: 'gemini-3.8-flash',
+      name: 'Gemini 3.8 Flash',
+      description: 'High performance flash model.',
+      tier: 'Experimental',
+      recommended: false,
+      supportsThinking: true,
+    },
+  ]);
+});
+
 // GitHub credentials & connection status
 app.get('/api/github/status', async (_req: Request, res: Response) => {
   try {
@@ -116,7 +170,7 @@ app.get('/api/tasks/:id', (req: Request, res: Response) => {
 });
 
 app.post('/api/tasks', (req: Request, res: Response) => {
-  const { prompt, repo, branch, personality, mode, thinkingEnabled } = req.body;
+  const { prompt, repo, branch, personality, mode, thinkingEnabled, model } = req.body;
   if (!prompt || !repo) {
     return res.status(400).json({ error: 'Prompt and repo are required' });
   }
@@ -128,6 +182,7 @@ app.post('/api/tasks', (req: Request, res: Response) => {
     personality: personality || 'builder',
     mode: mode || 'implement',
     thinkingEnabled: !!thinkingEnabled,
+    selectedModel: model,
   });
 
   res.status(201).json(task);
@@ -135,6 +190,11 @@ app.post('/api/tasks', (req: Request, res: Response) => {
 
 app.post('/api/tasks/:id/cancel', (req: Request, res: Response) => {
   const success = TaskManager.cancelTask(req.params.id);
+  res.json({ success });
+});
+
+app.delete('/api/tasks/:id', (req: Request, res: Response) => {
+  const success = TaskManager.deleteTask(req.params.id);
   res.json({ success });
 });
 

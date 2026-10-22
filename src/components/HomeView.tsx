@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
   Terminal, 
   CheckCircle2, 
   Clock, 
   AlertCircle, 
   GitBranch, 
   ArrowRight,
-  Code2,
-  Bug,
-  ShieldCheck,
-  Compass,
-  BrainCircuit
+  BrainCircuit,
+  Sparkles
 } from 'lucide-react';
 import { RepoItem, CodingTask, PersonalityId, TaskMode } from '../types';
 
@@ -22,53 +18,10 @@ interface HomeViewProps {
   onSelectRepo: (repo: RepoItem) => void;
   onSelectBranch: (branch: string) => void;
   tasks: CodingTask[];
-  onStartTask: (prompt: string, personality: PersonalityId, mode: TaskMode, thinkingEnabled: boolean) => void;
+  onStartTask: (prompt: string, personality: PersonalityId, mode: TaskMode, thinkingEnabled: boolean, model?: string) => void;
   onNavigateToTask: (task: CodingTask) => void;
   onOpenWorkspace: () => void;
 }
-
-const TEMPLATE_PROMPTS = [
-  {
-    icon: <Bug size={16} className="text-[#A8C7FA]" />,
-    personality: 'debugger' as PersonalityId,
-    mode: 'implement' as TaskMode,
-    title: 'Fix music player audio loop',
-    desc: 'Diagnose and fix playback position reset when switching tracks in Player.tsx',
-    prompt: 'Fix a bug in my music player where playback state does not reset properly when switching tracks in Player.tsx.',
-  },
-  {
-    icon: <Code2 size={16} className="text-[#A8C7FA]" />,
-    personality: 'builder' as PersonalityId,
-    mode: 'implement' as TaskMode,
-    title: 'Add settings screen',
-    desc: 'Create an accessible settings screen with preferences and equalizer options',
-    prompt: 'Add a clean settings page to my existing React app with dark mode preferences and audio equalizer settings.',
-  },
-  {
-    icon: <AlertCircle size={16} className="text-[#F2B8B5]" />,
-    personality: 'debugger' as PersonalityId,
-    mode: 'ask' as TaskMode,
-    title: 'Diagnose CI workflow failure',
-    desc: 'Investigate build failure logs in GitHub Actions and provide a verified patch',
-    prompt: 'Investigate why my GitHub Actions CI build failed and recommend the verified configuration fix.',
-  },
-  {
-    icon: <Compass size={16} className="text-[#C4C7C5]" />,
-    personality: 'architect' as PersonalityId,
-    mode: 'plan' as TaskMode,
-    title: 'Plan mobile navigation overhaul',
-    desc: 'Architect improved touch-friendly navigation while preserving existing design',
-    prompt: 'Plan how to improve the mobile touch navigation without changing the existing visual design system.',
-  },
-  {
-    icon: <ShieldCheck size={16} className="text-[#A8C7FA]" />,
-    personality: 'reviewer' as PersonalityId,
-    mode: 'ask' as TaskMode,
-    title: 'Audit repository authentication',
-    desc: 'Analyze security model, token lifecycle, and potential exposure vulnerabilities',
-    prompt: 'Explain how authentication and token validation work across this repository and audit for security risks.',
-  },
-];
 
 export function HomeView({
   repos,
@@ -94,30 +47,44 @@ export function HomeView({
     onStartTask(quickPrompt.trim(), selectedPersonality, selectedMode, thinkingEnabled);
   };
 
-  const applyTemplate = (t: typeof TEMPLATE_PROMPTS[0]) => {
-    setQuickPrompt(t.prompt);
-    setSelectedPersonality(t.personality);
-    setSelectedMode(t.mode);
-  };
-
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 pb-24 md:pb-16">
+      {/* Active Background Tasks Banner */}
+      {activeTasks.length > 0 && (
+        <div className="p-3.5 bg-[#004A77]/40 border border-[#A8C7FA]/40 rounded-xl flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#A8C7FA] animate-ping" />
+            <div>
+              <span className="font-semibold text-[#D3E3FD]">AI Worker Running in Background:</span>{' '}
+              <span className="text-[#E3E3E3] truncate font-medium">"{activeTasks[0].title}"</span>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigateToTask(activeTasks[0])}
+            className="px-3 py-1 bg-[#A8C7FA] text-[#131314] rounded-md font-medium text-[11px] hover:bg-[#7DACF8] transition flex items-center gap-1 flex-shrink-0"
+          >
+            <span>View Live Steps</span>
+            <ArrowRight size={12} />
+          </button>
+        </div>
+      )}
+
       {/* Google AI Studio Style Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs font-medium text-[#A8C7FA]">Personal AI Coding Workspace</span>
           <span className="text-[#8E918F]">·</span>
-          <span className="text-xs text-[#8E918F]">Powered by Gemini 3.8 Flash & 4 Argon</span>
+          <span className="text-xs text-[#8E918F]">Powered by Gemini 2.5 Flash & High Thinking</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-semibold text-[#F0F4F9] tracking-tight">
           What would you like to build today?
         </h1>
         <p className="text-sm text-[#C4C7C5] mt-1.5 max-w-2xl leading-relaxed">
-          Describe coding tasks in natural language, dispatch work to specialized engineering personalities, inspect reviewable diffs, and create GitHub Pull Requests.
+          Describe coding tasks in natural language, dispatch work to specialized engineering personalities, follow granular step-by-step progress in real time, and inspect reviewable Git diffs.
         </p>
       </div>
 
-      {/* Main Task Creator Box (Sleek AI Studio Prompt Editor Style) */}
+      {/* Main Task Creator Box */}
       <div className="bg-[#1E1F20] border border-[#333538] rounded-xl p-4 sm:p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between text-xs text-[#C4C7C5] pb-2 border-b border-[#333538]">
           <div className="flex items-center gap-2">
@@ -126,8 +93,8 @@ export function HomeView({
           </div>
           <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#8E918F]">
             <span>Target:</span>
-            <span className="text-[#E3E3E3]">{selectedRepo ? selectedRepo.name : 'No repo selected'}</span>
-            <span>({selectedBranch})</span>
+            <span className="text-[#E3E3E3] font-medium">{selectedRepo ? selectedRepo.fullName : 'No repository selected'}</span>
+            {selectedRepo && <span>({selectedBranch})</span>}
           </div>
         </div>
 
@@ -196,7 +163,7 @@ export function HomeView({
 
               <button
                 type="submit"
-                disabled={!quickPrompt.trim()}
+                disabled={!quickPrompt.trim() || !selectedRepo}
                 className="px-4 py-2 bg-[#A8C7FA] hover:bg-[#7DACF8] text-[#131314] font-medium text-xs rounded-lg transition flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <span>Run</span>
@@ -207,7 +174,7 @@ export function HomeView({
         </form>
       </div>
 
-      {/* Metrics Row (Google Clean Counters) */}
+      {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-[#1E1F20] border border-[#333538] p-3.5 rounded-lg">
           <div className="flex items-center justify-between text-xs text-[#8E918F] mb-1">
@@ -244,49 +211,11 @@ export function HomeView({
             <GitBranch size={14} className="text-[#A8C7FA]" />
           </div>
           <div className="text-xl font-semibold text-[#F0F4F9] font-mono">{repos.length}</div>
-          <div className="text-[11px] text-[#8E918F] mt-0.5">Connected & synced</div>
+          <div className="text-[11px] text-[#8E918F] mt-0.5">Connected GitHub repos</div>
         </div>
       </div>
 
-      {/* Suggested Quick Prompt Templates */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#8E918F]">
-            Starter Prompts & Scenarios
-          </h2>
-          <span className="text-xs text-[#8E918F]">Click any prompt to populate</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {TEMPLATE_PROMPTS.map((t, idx) => (
-            <div
-              key={idx}
-              onClick={() => applyTemplate(t)}
-              className="p-3.5 bg-[#1E1F20] hover:bg-[#282A2C] border border-[#333538] hover:border-[#444746] rounded-xl cursor-pointer transition flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center gap-2 mb-1.5">
-                  {t.icon}
-                  <span className="text-xs font-medium text-[#F0F4F9]">
-                    {t.title}
-                  </span>
-                </div>
-                <p className="text-xs text-[#C4C7C5] line-clamp-2 leading-relaxed">
-                  {t.desc}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[#333538]/50 text-[11px] text-[#8E918F]">
-                <span className="capitalize">{t.personality}</span>
-                <span>·</span>
-                <span className="uppercase font-mono">{t.mode}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Tasks List */}
+      {/* Recent Workspace Tasks */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#8E918F]">
@@ -303,7 +232,7 @@ export function HomeView({
 
         {tasks.length === 0 ? (
           <div className="p-8 text-center bg-[#1E1F20] border border-[#333538] rounded-xl text-xs text-[#8E918F]">
-            No tasks submitted yet. Choose a template or describe your first coding task above.
+            No tasks submitted yet. Select a repository and run your first coding objective above.
           </div>
         ) : (
           <div className="space-y-2">
@@ -315,7 +244,7 @@ export function HomeView({
               >
                 <div className="flex items-center gap-3 truncate pr-2">
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    task.status === 'running' ? 'bg-[#A8C7FA]' :
+                    task.status === 'running' ? 'bg-[#A8C7FA] animate-pulse' :
                     task.status === 'succeeded' ? 'bg-emerald-400' :
                     task.status === 'failed' ? 'bg-[#F2B8B5]' :
                     'bg-[#8E918F]'
@@ -328,6 +257,12 @@ export function HomeView({
                       <span className="capitalize">{task.personality}</span>
                       <span>·</span>
                       <span>{new Date(task.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      {task.proposedChanges && task.proposedChanges.length > 0 && (
+                        <>
+                          <span>·</span>
+                          <span className="text-[#A8C7FA]">{task.proposedChanges.length} file(s) changed</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

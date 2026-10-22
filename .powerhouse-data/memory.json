@@ -32,6 +32,18 @@
     "knownIssues": [],
     "recentDecisions": [],
     "customNotes": "",
-    "updatedAt": "2026-10-22T13:01:45.456Z"
+    "updatedAt": "2026-10-22T15:18:54.963Z"
+  },
+  "petedianotech/petediano-forge": {
+    "repo": "petedianotech/petediano-forge",
+    "framework": "TypeScript / Node.js",
+    "conventions": [
+      "Clean modular architecture",
+      "Strict type safety"
+    ],
+    "knownIssues": [],
+    "recentDecisions": [],
+    "customNotes": "",
+    "updatedAt": "2026-10-22T14:42:59.132Z"
   }
 }

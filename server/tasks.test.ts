@@ -24,8 +24,8 @@ test('MemoryService gets and updates repository conventions', () => {
 
 test('TaskManager creates task with initial queued status and activity event', () => {
   const task = TaskManager.createTask({
-    prompt: 'Implement a dark mode toggle',
-    repo: 'powerhouse-labs/music-player-react',
+    prompt: 'Unit test task creation',
+    repo: 'test-org/test-project',
     branch: 'main',
     personality: 'builder',
     mode: 'implement',
@@ -39,12 +39,15 @@ test('TaskManager creates task with initial queued status and activity event', (
   assert.equal(task.mode, 'implement');
   assert.ok(task.events.length >= 1);
   assert.equal(task.events[0].stage, 'task_accepted');
+
+  // Clean up
+  TaskManager.deleteTask(task.id);
 });
 
 test('TaskManager cancellation marks task as cancelled', () => {
   const task = TaskManager.createTask({
-    prompt: 'Long running task to cancel',
-    repo: 'powerhouse-labs/music-player-react',
+    prompt: 'Unit test cancellation task',
+    repo: 'test-org/test-project',
     branch: 'main',
     personality: 'architect',
     mode: 'plan',
@@ -57,5 +60,8 @@ test('TaskManager cancellation marks task as cancelled', () => {
 
   const fetched = TaskManager.getTask(task.id);
   assert.equal(fetched?.status, 'cancelled');
+
+  // Clean up
+  TaskManager.deleteTask(task.id);
   setTimeout(() => process.exit(0), 50);
 });

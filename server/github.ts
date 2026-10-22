@@ -19,7 +19,6 @@ interface StoredGitHubConfig {
   connectedAt: string | null;
 }
 
-// In-memory token storage (also saved to protected server file)
 let currentConfig: StoredGitHubConfig = {
   token: null,
   username: null,
@@ -29,7 +28,7 @@ let currentConfig: StoredGitHubConfig = {
   connectedAt: null,
 };
 
-// Try loading on boot
+// Load persistent configuration on boot
 try {
   if (fs.existsSync(CONFIG_FILE)) {
     const raw = fs.readFileSync(CONFIG_FILE, 'utf-8');
@@ -47,158 +46,9 @@ function saveConfig() {
   }
 }
 
-// Sample sandbox demo repositories for instant evaluation
-const SANDBOX_REPOS: Record<string, {
-  item: RepoItem;
-  branches: RepoBranch[];
-  files: Record<string, string>;
-}> = {
-  'powerhouse-labs/music-player-react': {
-    item: {
-      id: 901001,
-      name: 'music-player-react',
-      fullName: 'powerhouse-labs/music-player-react',
-      owner: 'powerhouse-labs',
-      description: 'Mobile-first progressive audio player with visualizer, playlists, and dark developer UI',
-      defaultBranch: 'main',
-      isPrivate: false,
-      language: 'TypeScript',
-      updatedAt: new Date().toISOString(),
-      starsCount: 42,
-      openIssuesCount: 3,
-    },
-    branches: [
-      { name: 'main', isDefault: true, protected: true },
-      { name: 'develop', isDefault: false, protected: false },
-      { name: 'fix/audio-controls', isDefault: false, protected: false },
-    ],
-    files: {
-      'package.json': JSON.stringify({
-        name: 'music-player-react',
-        version: '1.2.0',
-        dependencies: {
-          react: '^19.0.0',
-          'lucide-react': '^0.546.0',
-          zustand: '^4.5.0'
-        }
-      }, null, 2),
-      'src/App.tsx': `import React, { useState } from 'react';
-import { Player } from './components/Player';
-import { TrackList } from './components/TrackList';
-
-export default function App() {
-  const [currentTrack, setCurrentTrack] = useState<number | null>(null);
-  return (
-    <div className="min-h-screen bg-slate-900 text-white p-4">
-      <header className="mb-6 flex justify-between items-center">
-        <h1 className="text-xl font-bold tracking-tight">SonicDeck Player</h1>
-        <span className="text-xs text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded">v1.2</span>
-      </header>
-      <TrackList onSelect={setCurrentTrack} activeIndex={currentTrack} />
-      <Player trackId={currentTrack} />
-    </div>
-  );
-}`,
-      'src/components/Player.tsx': `import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, SkipForward, Volume2 } from 'lucide-react';
-
-interface PlayerProps {
-  trackId: number | null;
-}
-
-export function Player({ trackId }: PlayerProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  // Bug: audio element doesn't reset position when trackId changes
-  useEffect(() => {
-    if (trackId !== null) {
-      setIsPlaying(true);
-    }
-  }, [trackId]);
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 bg-slate-800/95 border-t border-slate-700 p-4 backdrop-blur flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <button 
-          onClick={() => setIsPlaying(!isPlaying)}
-          className="p-3 bg-emerald-500 rounded-full text-slate-950 font-bold hover:bg-emerald-400"
-          aria-label={isPlaying ? "Pause" : "Play"}
-        >
-          {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-        </button>
-        <div>
-          <p className="text-sm font-semibold">{trackId !== null ? \`Track #\${trackId}\` : 'No track selected'}</p>
-          <p className="text-xs text-slate-400">{isPlaying ? 'Playing' : 'Paused'}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <Volume2 size={18} className="text-slate-400" />
-      </div>
-    </div>
-  );
-}`,
-      'src/components/TrackList.tsx': `import React from 'react';
-
-const TRACKS = [
-  { id: 1, title: 'Midnight Synthesizer', artist: 'Kavinsky Wave', duration: '3:45' },
-  { id: 2, title: 'Neural Gateway', artist: 'Argon Pulse', duration: '4:12' },
-  { id: 3, title: 'Cybernetic Horizon', artist: 'Hyperion', duration: '2:58' },
-];
-
-export function TrackList({ onSelect, activeIndex }: { onSelect: (id: number) => void; activeIndex: number | null }) {
-  return (
-    <div className="space-y-2 pb-24">
-      {TRACKS.map((t) => (
-        <div
-          key={t.id}
-          onClick={() => onSelect(t.id)}
-          className={\`p-3 rounded-lg border transition cursor-pointer flex justify-between items-center \${
-            activeIndex === t.id ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
-          }\`}
-        >
-          <div>
-            <div className="font-medium text-sm">{t.title}</div>
-            <div className="text-xs text-slate-400">{t.artist}</div>
-          </div>
-          <span className="text-xs font-mono text-slate-400">{t.duration}</span>
-        </div>
-      ))}
-    </div>
-  );
-}`,
-      'README.md': `# SonicDeck Music Player\n\nA lightweight mobile-first React music player.\n\n### Running locally\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\``,
-    }
-  },
-  'powerhouse-labs/dev-dashboard': {
-    item: {
-      id: 901002,
-      name: 'dev-dashboard',
-      fullName: 'powerhouse-labs/dev-dashboard',
-      owner: 'powerhouse-labs',
-      description: 'Telemetry and serverless worker monitoring console with GitHub Actions health check',
-      defaultBranch: 'main',
-      isPrivate: false,
-      language: 'TypeScript',
-      updatedAt: new Date().toISOString(),
-      starsCount: 19,
-      openIssuesCount: 1,
-    },
-    branches: [
-      { name: 'main', isDefault: true, protected: true },
-      { name: 'staging', isDefault: false, protected: false },
-    ],
-    files: {
-      'package.json': JSON.stringify({ name: 'dev-dashboard', version: '0.9.1' }, null, 2),
-      'src/App.tsx': `export default function App() { return <div className="p-4">Dev Dashboard</div>; }`,
-      '.github/workflows/ci.yml': `name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm test`,
-    }
-  }
-};
-
 export class GitHubService {
   /**
-   * Test connection and retrieve credentials info
+   * Test connection and retrieve credentials info directly from GitHub API
    */
   static async testConnection(token: string): Promise<GitHubAccountStatus> {
     const res = await fetch('https://api.github.com/user', {
@@ -211,7 +61,14 @@ export class GitHubService {
 
     if (!res.ok) {
       const errBody = await res.text();
-      throw new Error(`GitHub authentication failed (${res.status}): ${errBody || res.statusText}`);
+      let parsedMessage = '';
+      try {
+        const json = JSON.parse(errBody);
+        parsedMessage = json.message || '';
+      } catch {
+        parsedMessage = errBody;
+      }
+      throw new Error(`GitHub authentication failed (${res.status}): ${parsedMessage || res.statusText}`);
     }
 
     const data = await res.json();
@@ -227,7 +84,7 @@ export class GitHubService {
       username: data.login,
       name: data.name || data.login,
       avatarUrl: data.avatar_url,
-      scopes: scopes.length > 0 ? scopes : ['repo', 'read:user', 'workflow'],
+      scopes: scopes.length > 0 ? scopes : ['repo', 'read:user'],
       rateLimit: {
         limit: rateLimitLimit,
         remaining: rateLimitRemaining,
@@ -274,9 +131,7 @@ export class GitHubService {
    */
   static async getStatus(): Promise<GitHubAccountStatus> {
     if (!currentConfig.token) {
-      return {
-        connected: false,
-      };
+      return { connected: false };
     }
 
     try {
@@ -284,7 +139,7 @@ export class GitHubService {
       return status;
     } catch {
       return {
-        connected: true,
+        connected: !!currentConfig.token,
         username: currentConfig.username || undefined,
         name: currentConfig.name || undefined,
         avatarUrl: currentConfig.avatarUrl || undefined,
@@ -294,65 +149,64 @@ export class GitHubService {
   }
 
   /**
-   * List repositories accessible to the user
+   * List genuine repositories accessible to the authenticated user from GitHub API
    */
   static async listRepositories(): Promise<RepoItem[]> {
-    const results: RepoItem[] = [];
-
-    // Always include sandbox repos
-    for (const key of Object.keys(SANDBOX_REPOS)) {
-      results.push(SANDBOX_REPOS[key].item);
+    if (!currentConfig.token) {
+      return [];
     }
 
-    if (currentConfig.token) {
-      try {
-        const res = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
-          headers: {
-            Authorization: `Bearer ${currentConfig.token}`,
-            Accept: 'application/vnd.github+json',
-            'User-Agent': 'Powerhouse-Workspace/1.0',
-          },
-        });
+    const results: RepoItem[] = [];
 
-        if (res.ok) {
-          const repos = await res.json();
-          for (const r of repos) {
-            results.push({
-              id: r.id,
-              name: r.name,
-              fullName: r.full_name,
-              owner: r.owner.login,
-              description: r.description,
-              defaultBranch: r.default_branch,
-              isPrivate: r.private,
-              language: r.language,
-              updatedAt: r.updated_at,
-              starsCount: r.stargazers_count,
-              openIssuesCount: r.open_issues_count,
-            });
-          }
-        }
-      } catch (e) {
-        console.error('Error fetching GitHub repos:', e);
+    try {
+      // Fetch up to 100 user repositories sorted by updated date
+      const res = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member', {
+        headers: {
+          Authorization: `Bearer ${currentConfig.token}`,
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'Powerhouse-Workspace/1.0',
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`GitHub API error (${res.status}): ${res.statusText}`);
       }
+
+      const repos = await res.json();
+      if (Array.isArray(repos)) {
+        for (const r of repos) {
+          results.push({
+            id: r.id,
+            name: r.name,
+            fullName: r.full_name,
+            owner: r.owner ? r.owner.login : '',
+            description: r.description || '',
+            defaultBranch: r.default_branch || 'main',
+            isPrivate: !!r.private,
+            language: r.language || 'Unknown',
+            updatedAt: r.updated_at || new Date().toISOString(),
+            starsCount: r.stargazers_count || 0,
+            openIssuesCount: r.open_issues_count || 0,
+          });
+        }
+      }
+    } catch (e: any) {
+      console.error('Error fetching real GitHub repositories:', e);
+      throw e;
     }
 
     return results;
   }
 
   /**
-   * List branches for a repo
+   * List real branches for a repository
    */
   static async listBranches(repoFullName: string): Promise<RepoBranch[]> {
-    if (SANDBOX_REPOS[repoFullName]) {
-      return SANDBOX_REPOS[repoFullName].branches;
-    }
-
     if (!currentConfig.token) {
-      throw new Error(`GitHub token not configured for external repo: ${repoFullName}`);
+      throw new Error(`GitHub authentication required. Please connect your GitHub account in Settings.`);
     }
 
-    const res = await fetch(`https://api.github.com/repos/${repoFullName}/branches`, {
+    const res = await fetch(`https://api.github.com/repos/${repoFullName}/branches?per_page=100`, {
       headers: {
         Authorization: `Bearer ${currentConfig.token}`,
         Accept: 'application/vnd.github+json',
@@ -361,11 +215,12 @@ export class GitHubService {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to list branches for ${repoFullName}: ${res.statusText}`);
+      const err = await res.text();
+      throw new Error(`Failed to list branches for ${repoFullName} (${res.status}): ${err || res.statusText}`);
     }
 
     const branches = await res.json();
-    return branches.map((b: { name: string; protected: boolean }) => ({
+    return branches.map((b: { name: string; protected?: boolean }) => ({
       name: b.name,
       isDefault: b.name === 'main' || b.name === 'master',
       protected: !!b.protected,
@@ -373,22 +228,14 @@ export class GitHubService {
   }
 
   /**
-   * Get recursive file tree of repository
+   * Get recursive file tree of real repository from GitHub Git Data API
    */
   static async getTree(repoFullName: string, branch: string = 'main'): Promise<RepoFileNode[]> {
-    if (SANDBOX_REPOS[repoFullName]) {
-      const files = SANDBOX_REPOS[repoFullName].files;
-      return Object.keys(files).map(filePath => ({
-        path: filePath,
-        type: 'blob',
-        size: files[filePath].length,
-      }));
-    }
-
     if (!currentConfig.token) {
-      throw new Error(`GitHub token not configured for external repo: ${repoFullName}`);
+      throw new Error(`GitHub authentication required to read repository tree.`);
     }
 
+    // Try recursive git tree endpoint first
     const res = await fetch(`https://api.github.com/repos/${repoFullName}/git/trees/${branch}?recursive=1`, {
       headers: {
         Authorization: `Bearer ${currentConfig.token}`,
@@ -398,7 +245,25 @@ export class GitHubService {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch git tree for ${repoFullName}@${branch}: ${res.statusText}`);
+      // Fallback: try root contents if git tree fails or repo has no commits
+      const contentsRes = await fetch(`https://api.github.com/repos/${repoFullName}/contents?ref=${branch}`, {
+        headers: {
+          Authorization: `Bearer ${currentConfig.token}`,
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'Powerhouse-Workspace/1.0',
+        },
+      });
+
+      if (!contentsRes.ok) {
+        throw new Error(`Failed to fetch tree for ${repoFullName}@${branch}: ${res.statusText}`);
+      }
+
+      const contents = await contentsRes.json();
+      return (contents || []).map((node: { path: string; type: string; size?: number }) => ({
+        path: node.path,
+        type: node.type === 'file' ? 'blob' : 'tree',
+        size: node.size,
+      }));
     }
 
     const data = await res.json();
@@ -410,22 +275,14 @@ export class GitHubService {
   }
 
   /**
-   * Read file content
+   * Read real file content from GitHub Contents API
    */
   static async getFileContent(repoFullName: string, filePath: string, branch: string = 'main'): Promise<string> {
-    if (SANDBOX_REPOS[repoFullName]) {
-      const content = SANDBOX_REPOS[repoFullName].files[filePath];
-      if (content === undefined) {
-        throw new Error(`File not found: ${filePath}`);
-      }
-      return content;
-    }
-
     if (!currentConfig.token) {
-      throw new Error(`GitHub token not configured for external repo: ${repoFullName}`);
+      throw new Error(`GitHub authentication required to read file content.`);
     }
 
-    const res = await fetch(`https://api.github.com/repos/${repoFullName}/contents/${filePath}?ref=${branch}`, {
+    const res = await fetch(`https://api.github.com/repos/${repoFullName}/contents/${encodeURIComponent(filePath).replace(/%2F/g, '/')}?ref=${branch}`, {
       headers: {
         Authorization: `Bearer ${currentConfig.token}`,
         Accept: 'application/vnd.github+json',
@@ -434,7 +291,7 @@ export class GitHubService {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch file ${filePath}: ${res.statusText}`);
+      throw new Error(`Failed to fetch file '${filePath}' from ${repoFullName}@${branch} (${res.status}): ${res.statusText}`);
     }
 
     const data = await res.json();
@@ -445,7 +302,7 @@ export class GitHubService {
   }
 
   /**
-   * Apply changes and create a dedicated working branch & PR
+   * Apply changes and create a real dedicated working branch & PR on GitHub
    */
   static async applyChangesAndCreatePR(
     repoFullName: string,
@@ -456,27 +313,6 @@ export class GitHubService {
   ): Promise<{ branchName: string; prUrl: string }> {
     const timestamp = Date.now();
     const branchName = `powerhouse/task-${timestamp}`;
-
-    if (SANDBOX_REPOS[repoFullName]) {
-      // Apply changes to sandbox repo
-      for (const change of changes) {
-        if (change.action === 'delete') {
-          delete SANDBOX_REPOS[repoFullName].files[change.path];
-        } else if (change.newContent !== undefined) {
-          SANDBOX_REPOS[repoFullName].files[change.path] = change.newContent;
-        }
-      }
-      SANDBOX_REPOS[repoFullName].branches.push({
-        name: branchName,
-        isDefault: false,
-        protected: false,
-      });
-
-      return {
-        branchName,
-        prUrl: `https://github.com/${repoFullName}/pull/sandbox-pr-${timestamp}`,
-      };
-    }
 
     if (!currentConfig.token) {
       throw new Error('GitHub token required to create branch and Pull Request');
@@ -490,11 +326,11 @@ export class GitHubService {
         'User-Agent': 'Powerhouse-Workspace/1.0',
       },
     });
-    if (!refRes.ok) throw new Error(`Could not find base branch ${baseBranch}`);
+    if (!refRes.ok) throw new Error(`Could not find base branch ${baseBranch} on ${repoFullName}`);
     const refData = await refRes.json();
     const baseSha = refData.object.sha;
 
-    // 2. Create new branch
+    // 2. Create new branch on GitHub
     const createBranchRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/refs`, {
       method: 'POST',
       headers: {
@@ -508,13 +344,15 @@ export class GitHubService {
         sha: baseSha,
       }),
     });
-    if (!createBranchRes.ok) throw new Error(`Could not create branch ${branchName}`);
+    if (!createBranchRes.ok) {
+      const branchErr = await createBranchRes.text();
+      throw new Error(`Could not create branch ${branchName}: ${branchErr}`);
+    }
 
-    // 3. Commit changes to the new branch
+    // 3. Commit each file change to the new branch
     for (const change of changes) {
       if (change.action === 'delete') {
-        // Fetch existing sha
-        const getFileRes = await fetch(`https://api.github.com/repos/${repoFullName}/contents/${change.path}?ref=${branchName}`, {
+        const getFileRes = await fetch(`https://api.github.com/repos/${repoFullName}/contents/${encodeURIComponent(change.path).replace(/%2F/g, '/')}?ref=${branchName}`, {
           headers: {
             Authorization: `Bearer ${currentConfig.token}`,
             Accept: 'application/vnd.github+json',
@@ -523,7 +361,7 @@ export class GitHubService {
         });
         if (getFileRes.ok) {
           const fileData = await getFileRes.json();
-          await fetch(`https://api.github.com/repos/${repoFullName}/contents/${change.path}`, {
+          await fetch(`https://api.github.com/repos/${repoFullName}/contents/${encodeURIComponent(change.path).replace(/%2F/g, '/')}`, {
             method: 'DELETE',
             headers: {
               Authorization: `Bearer ${currentConfig.token}`,
@@ -540,7 +378,7 @@ export class GitHubService {
       } else if (change.newContent !== undefined) {
         let existingSha: string | undefined;
         try {
-          const existingRes = await fetch(`https://api.github.com/repos/${repoFullName}/contents/${change.path}?ref=${branchName}`, {
+          const existingRes = await fetch(`https://api.github.com/repos/${repoFullName}/contents/${encodeURIComponent(change.path).replace(/%2F/g, '/')}?ref=${branchName}`, {
             headers: {
               Authorization: `Bearer ${currentConfig.token}`,
               Accept: 'application/vnd.github+json',
@@ -552,10 +390,10 @@ export class GitHubService {
             existingSha = existingData.sha;
           }
         } catch {
-          // File doesn't exist yet, that's fine
+          // File does not exist yet
         }
 
-        const commitRes = await fetch(`https://api.github.com/repos/${repoFullName}/contents/${change.path}`, {
+        const commitRes = await fetch(`https://api.github.com/repos/${repoFullName}/contents/${encodeURIComponent(change.path).replace(/%2F/g, '/')}`, {
           method: 'PUT',
           headers: {
             Authorization: `Bearer ${currentConfig.token}`,
@@ -570,12 +408,13 @@ export class GitHubService {
           }),
         });
         if (!commitRes.ok) {
-          console.warn(`Warning: failed to commit file ${change.path}:`, await commitRes.text());
+          const errText = await commitRes.text();
+          console.warn(`Warning: failed to commit file ${change.path}:`, errText);
         }
       }
     }
 
-    // 4. Open Pull Request
+    // 4. Open Pull Request on GitHub
     const prRes = await fetch(`https://api.github.com/repos/${repoFullName}/pulls`, {
       method: 'POST',
       headers: {
@@ -594,7 +433,7 @@ export class GitHubService {
 
     if (!prRes.ok) {
       const err = await prRes.text();
-      console.warn('PR creation warning:', err);
+      console.warn('Pull Request creation response:', err);
       return {
         branchName,
         prUrl: `https://github.com/${repoFullName}/tree/${branchName}`,

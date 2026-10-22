@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
-  Key, 
   ShieldCheck, 
   Radio, 
   Database, 
@@ -12,9 +11,11 @@ import {
   AlertCircle,
   BrainCircuit,
   Lock,
-  Github
+  Github,
+  Smartphone
 } from 'lucide-react';
 import { GitHubAccountStatus, ProjectMemory, RepoItem } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface SettingsViewProps {
   githubStatus: GitHubAccountStatus;
@@ -52,7 +53,7 @@ export function SettingsView({
     if (!repoName) return;
     try {
       const res = await fetch(`/api/memory/${repoName}`);
-      if (res.ok) {
+      if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
         const data = await res.json();
         setMemory(data);
       }
@@ -131,7 +132,7 @@ export function SettingsView({
           <span>Settings</span>
         </h1>
         <p className="text-xs text-[#8E918F] mt-1">
-          Configure GitHub integration, data saver mode, and repository project memory.
+          Configure GitHub integration, Progressive Web App options, data saver mode, and repository project memory.
         </p>
       </div>
 
@@ -229,7 +230,7 @@ export function SettingsView({
               <Lock size={14} className="absolute right-3.5 top-2.5 text-[#8E918F]" />
             </div>
             <p className="text-[11px] text-[#8E918F] mt-1.5 leading-relaxed">
-              Tokens are transmitted directly to the server backend over HTTPS and are never stored in client localStorage. Required scopes: <code className="text-[#A8C7FA]">repo</code> (read/write code & pull requests) and <code className="text-[#A8C7FA]">read:user</code>.
+              Token is verified directly with GitHub API and saved locally to enable live repository read/write access on mobile or Vercel deployments.
             </p>
           </div>
 
@@ -269,6 +270,34 @@ export function SettingsView({
         </form>
       </div>
 
+      {/* PWA Mobile Installation Card */}
+      <div className="bg-[#1E1F20] border border-[#333538] rounded-xl p-5 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#333538] pb-3">
+          <div className="flex items-center gap-2.5">
+            <Smartphone size={18} className="text-[#A8C7FA]" />
+            <div>
+              <h2 className="text-sm font-semibold text-[#F0F4F9]">
+                Mobile Progressive Web App (PWA)
+              </h2>
+              <p className="text-xs text-[#8E918F]">
+                Install Powerhouse on Android or iOS home screen as a standalone app.
+              </p>
+            </div>
+          </div>
+
+          <PWAInstallButton />
+        </div>
+
+        <div className="p-3 bg-[#131314] border border-[#333538] rounded-lg text-xs text-[#C4C7C5] leading-relaxed space-y-1">
+          <div className="text-[#E3E3E3] font-medium">Benefits of Mobile Installation:</div>
+          <ul className="list-disc list-inside space-y-0.5 text-[11px] text-[#8E918F]">
+            <li>Full screen standalone display without web browser bars</li>
+            <li>Fast home screen launch and device offline caching</li>
+            <li>Background task execution tracking across app sessions</li>
+          </ul>
+        </div>
+      </div>
+
       {/* Data Saver & Performance */}
       <div className="bg-[#1E1F20] border border-[#333538] rounded-xl p-5 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
@@ -279,7 +308,7 @@ export function SettingsView({
                 Data Saver & Mobile Performance
               </h2>
               <p className="text-xs text-[#8E918F] mt-0.5">
-                Optimize network requests, avoid redundant file downloads, and switch 3D rendering to on-demand.
+                Optimize network requests, avoid redundant file downloads, and conserve battery on mobile devices.
               </p>
             </div>
           </div>
@@ -306,7 +335,7 @@ export function SettingsView({
           When active:
           <ul className="list-disc list-inside mt-1 space-y-0.5 text-[11px] text-[#C4C7C5]">
             <li>Limits background polling intervals for active tasks</li>
-            <li>Renders 3D Matrix on demand rather than continuous 60fps</li>
+            <li>Minimizes mobile battery consumption during long runs</li>
             <li>Compresses file tree indexing to targeted source files</li>
           </ul>
         </div>
@@ -321,7 +350,7 @@ export function SettingsView({
               Gemini Reasoning Models
             </h2>
             <p className="text-xs text-[#8E918F]">
-              Server-side execution via Google GenAI SDK.
+              Server-side execution via Google GenAI SDK with multi-model selector.
             </p>
           </div>
         </div>
@@ -329,21 +358,21 @@ export function SettingsView({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3 bg-[#131314] border border-[#333538] rounded-lg">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[#A8C7FA] font-medium font-mono">gemini-4-argon</span>
-              <span className="text-[10px] bg-[#004A77] text-[#D3E3FD] px-1.5 py-0.5 rounded font-mono">High Thinking</span>
+              <span className="text-[#A8C7FA] font-medium font-mono">gemini-2.5-flash</span>
+              <span className="text-[10px] bg-[#004A77] text-[#D3E3FD] px-1.5 py-0.5 rounded font-mono">Recommended</span>
             </div>
             <p className="text-xs text-[#C4C7C5] leading-relaxed">
-              Configured with <code className="text-[#A8C7FA]">thinkingLevel: ThinkingLevel.HIGH</code> for deep architectural planning, multi-file code synthesis, and tricky bug fixes.
+              Recommended for free tier. Fast, highly reliable, and supports <code className="text-[#A8C7FA]">thinkingBudget: 2048</code> for complex code synthesis.
             </p>
           </div>
 
           <div className="p-3 bg-[#131314] border border-[#333538] rounded-lg">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-emerald-400 font-medium font-mono">gemini-3.8-flash</span>
-              <span className="text-[10px] bg-emerald-950/50 text-emerald-300 px-1.5 py-0.5 rounded font-mono">Fast Engine</span>
+              <span className="text-emerald-400 font-medium font-mono">gemini-2.5-pro</span>
+              <span className="text-[10px] bg-emerald-950/50 text-emerald-300 px-1.5 py-0.5 rounded font-mono">High Intelligence</span>
             </div>
             <p className="text-xs text-[#C4C7C5] leading-relaxed">
-              Ultra fast response model for quick repository explanations, lightweight diffs, and rapid reviews.
+              Advanced reasoning for deep multi-file architectural planning and complex debugging.
             </p>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Home, Terminal, CheckSquare, Settings, Layers } from 'lucide-react';
+import { Home, Terminal, CheckSquare, Settings } from 'lucide-react';
 
-export type NavTab = 'home' | 'workspace' | 'tasks' | 'topology' | 'settings';
+export type NavTab = 'home' | 'workspace' | 'tasks' | 'settings';
 
 interface BottomNavProps {
   currentTab: NavTab;
@@ -14,7 +14,6 @@ export function BottomNav({ currentTab, onSelectTab, activeTasksCount = 0 }: Bot
     { id: 'home', label: 'Overview', icon: <Home size={18} /> },
     { id: 'workspace', label: 'Workspace', icon: <Terminal size={18} /> },
     { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={18} />, badge: activeTasksCount },
-    { id: 'topology', label: '3D View', icon: <Layers size={18} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
@@ -27,11 +26,11 @@ export function BottomNav({ currentTab, onSelectTab, activeTasksCount = 0 }: Bot
             <button
               key={tab.id}
               onClick={() => onSelectTab(tab.id)}
-              className={`flex flex-col items-center justify-center py-1 px-3 transition relative ${
+              className={`flex flex-col items-center justify-center py-1 px-4 transition relative ${
                 isActive ? 'text-[#A8C7FA]' : 'text-[#8E918F] hover:text-[#E3E3E3]'
               }`}
             >
-              <div className={`px-3 py-0.5 rounded-full transition-colors flex items-center justify-center relative ${
+              <div className={`px-4 py-0.5 rounded-full transition-colors flex items-center justify-center relative ${
                 isActive ? 'bg-[#004A77] text-[#D3E3FD]' : ''
               }`}>
                 {tab.icon}

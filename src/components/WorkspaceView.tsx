@@ -16,7 +16,8 @@ import {
   Check,
   ChevronDown,
   Sparkles,
-  ExternalLink
+  Loader2,
+  Cpu
 } from 'lucide-react';
 import { 
   RepoItem, 
@@ -37,11 +38,20 @@ interface WorkspaceViewProps {
   onSelectRepo: (repo: RepoItem) => void;
   onSelectBranch: (branch: string) => void;
   currentTask: CodingTask | null;
-  onStartTask: (prompt: string, personality: PersonalityId, mode: TaskMode, thinkingEnabled: boolean) => void;
+  onStartTask: (prompt: string, personality: PersonalityId, mode: TaskMode, thinkingEnabled: boolean, model?: string) => void;
   onCancelTask: (taskId: string) => void;
   onApplyChanges: (taskId: string) => void;
   isApplyingChanges?: boolean;
 }
+
+const AVAILABLE_MODELS = [
+  { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (Recommended)', badge: 'Free Tier' },
+  { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro', badge: 'High Intelligence' },
+  { id: 'gemini-1.5-flash', label: 'gemini-1.5-flash', badge: 'Lightweight' },
+  { id: 'gemini-1.5-pro', label: 'gemini-1.5-pro', badge: 'Deep Context' },
+  { id: 'gemini-3.5-flash', label: 'gemini-3.5-flash', badge: 'Preview' },
+  { id: 'gemini-3.8-flash', label: 'gemini-3.8-flash', badge: 'Experimental' },
+];
 
 export function WorkspaceView({
   repos,
@@ -60,19 +70,27 @@ export function WorkspaceView({
   const [personality, setPersonality] = useState<PersonalityId>('builder');
   const [mode, setMode] = useState<TaskMode>('implement');
   const [thinkingEnabled, setThinkingEnabled] = useState(true);
-  const [activeTab, setActiveTab] = useState<'brief' | 'diff' | 'timeline' | 'report'>('brief');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-2.5-flash');
+  const [activeTab, setActiveTab] = useState<'brief' | 'diff' | 'timeline' | 'report'>('timeline');
   const [copiedCode, setCopiedCode] = useState(false);
 
+  const isRunning = currentTask?.status === 'running' || currentTask?.status === 'queued';
+
+  // Automatically switch tabs based on execution state
   useEffect(() => {
-    if (currentTask?.proposedChanges && currentTask.proposedChanges.length > 0 && activeTab === 'brief') {
+    if (isRunning) {
+      setActiveTab('timeline');
+    } else if (currentTask?.proposedChanges && currentTask.proposedChanges.length > 0) {
       setActiveTab('diff');
+    } else if (currentTask?.finalReport) {
+      setActiveTab('report');
     }
-  }, [currentTask?.id, currentTask?.proposedChanges?.length]);
+  }, [currentTask?.id, isRunning]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim() || !selectedRepo) return;
-    onStartTask(prompt.trim(), personality, mode, thinkingEnabled);
+    onStartTask(prompt.trim(), personality, mode, thinkingEnabled, selectedModel);
   };
 
   const copyResponse = () => {
@@ -109,6 +127,10 @@ export function WorkspaceView({
     },
   ];
 
+  const latestEvent = currentTask?.events && currentTask.events.length > 0 
+    ? currentTask.events[currentTask.events.length - 1] 
+    : null;
+
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-6 py-6 space-y-6 pb-24 md:pb-16">
       {/* Google AI Studio Prompt Box */}
@@ -117,45 +139,74 @@ export function WorkspaceView({
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#333538]">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="text-[#8E918F]">Repository:</span>
-            <select
-              value={selectedRepo?.fullName || ''}
-              onChange={e => {
-                const found = repos.find(r => r.fullName === e.target.value);
-                if (found) onSelectRepo(found);
-              }}
-              className="bg-[#131314] border border-[#333538] text-[#E3E3E3] rounded-md px-2.5 py-1 focus:outline-none focus:border-[#A8C7FA]"
-            >
-              {repos.map(r => (
-                <option key={r.fullName} value={r.fullName}>
-                  {r.name} {r.isPrivate ? '(private)' : ''}
-                </option>
-              ))}
-            </select>
+            {repos.length > 0 ? (
+              <select
+                value={selectedRepo?.fullName || ''}
+                onChange={e => {
+                  const found = repos.find(r => r.fullName === e.target.value);
+                  if (found) onSelectRepo(found);
+                }}
+                className="bg-[#131314] border border-[#333538] text-[#E3E3E3] rounded-md px-2.5 py-1 focus:outline-none focus:border-[#A8C7FA]"
+              >
+                {repos.map(r => (
+                  <option key={r.fullName} value={r.fullName}>
+                    {r.fullName} {r.isPrivate ? '(private)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-[#F2B8B5] font-mono text-[11px]">
+                No GitHub repositories available
+              </span>
+            )}
 
             <span className="text-[#8E918F] ml-1">Branch:</span>
             <select
               value={selectedBranch}
               onChange={e => onSelectBranch(e.target.value)}
+              disabled={branches.length === 0}
               className="bg-[#131314] border border-[#333538] text-[#A8C7FA] font-mono rounded-md px-2 py-1 focus:outline-none focus:border-[#A8C7FA]"
             >
-              {branches.map(b => (
-                <option key={b.name} value={b.name}>
-                  {b.name} {b.protected ? '(protected)' : ''}
-                </option>
-              ))}
+              {branches.length > 0 ? (
+                branches.map(b => (
+                  <option key={b.name} value={b.name}>
+                    {b.name} {b.protected ? '(protected)' : ''}
+                  </option>
+                ))
+              ) : (
+                <option value="main">main</option>
+              )}
             </select>
           </div>
 
-          {/* Thinking Mode Option */}
-          <div className="flex items-center gap-2 bg-[#131314] border border-[#333538] px-3 py-1 rounded-md text-xs">
-            <BrainCircuit size={13} className={thinkingEnabled ? 'text-[#A8C7FA]' : 'text-[#8E918F]'} />
-            <span className="text-[#C4C7C5]">High Thinking (gemini-4-argon)</span>
-            <input
-              type="checkbox"
-              checked={thinkingEnabled}
-              onChange={e => setThinkingEnabled(e.target.checked)}
-              className="accent-[#A8C7FA] cursor-pointer"
-            />
+          {/* Model Selector & Thinking Mode Controls */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1.5 bg-[#131314] border border-[#333538] px-2.5 py-1 rounded-md text-xs">
+              <Cpu size={13} className="text-[#A8C7FA]" />
+              <span className="text-[#8E918F] hidden sm:inline">Model:</span>
+              <select
+                value={selectedModel}
+                onChange={e => setSelectedModel(e.target.value)}
+                className="bg-transparent text-[#E3E3E3] font-mono focus:outline-none text-xs cursor-pointer"
+              >
+                {AVAILABLE_MODELS.map(m => (
+                  <option key={m.id} value={m.id} className="bg-[#1E1F20] text-[#E3E3E3]">
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-[#131314] border border-[#333538] px-3 py-1 rounded-md text-xs select-none">
+              <BrainCircuit size={13} className={thinkingEnabled ? 'text-[#A8C7FA]' : 'text-[#8E918F]'} />
+              <span className="text-[#C4C7C5]">High Thinking</span>
+              <input
+                type="checkbox"
+                checked={thinkingEnabled}
+                onChange={e => setThinkingEnabled(e.target.checked)}
+                className="accent-[#A8C7FA] cursor-pointer ml-0.5"
+              />
+            </div>
           </div>
         </div>
 
@@ -214,7 +265,7 @@ export function WorkspaceView({
 
               <button
                 type="submit"
-                disabled={!prompt.trim()}
+                disabled={!prompt.trim() || !selectedRepo}
                 className="px-5 py-2 bg-[#A8C7FA] hover:bg-[#7DACF8] text-[#131314] font-medium text-xs rounded-lg transition flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Play size={13} className="fill-[#131314]" />
@@ -227,20 +278,20 @@ export function WorkspaceView({
 
       {/* Task Output Section */}
       {currentTask ? (
-        <div className="bg-[#1E1F20] border border-[#333538] rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-[#1E1F20] border border-[#333538] rounded-xl overflow-hidden shadow-sm space-y-0">
           {/* Active Task Banner */}
           <div className="p-4 bg-[#282A2C]/60 border-b border-[#333538] flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
-                <span className={`w-2 h-2 rounded-full ${
-                  currentTask.status === 'running' ? 'bg-[#A8C7FA]' :
+                <span className={`w-2.5 h-2.5 rounded-full ${
+                  isRunning ? 'bg-[#A8C7FA] animate-ping' :
                   currentTask.status === 'succeeded' ? 'bg-emerald-400' :
                   currentTask.status === 'failed' ? 'bg-[#F2B8B5]' :
                   'bg-[#8E918F]'
                 }`} />
                 <h3 className="text-sm font-semibold text-[#F0F4F9]">{currentTask.title}</h3>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-mono ${
-                  currentTask.status === 'running' ? 'bg-[#004A77] text-[#D3E3FD]' :
+                  isRunning ? 'bg-[#004A77] text-[#D3E3FD]' :
                   currentTask.status === 'succeeded' ? 'bg-emerald-950/50 text-emerald-300' :
                   currentTask.status === 'failed' ? 'bg-rose-950/50 text-rose-300' :
                   'bg-[#131314] text-[#8E918F]'
@@ -249,8 +300,8 @@ export function WorkspaceView({
                 </span>
               </div>
 
-              <div className="text-xs text-[#8E918F] flex items-center gap-2">
-                <span>{currentTask.repo}</span>
+              <div className="text-xs text-[#8E918F] flex flex-wrap items-center gap-2">
+                <span className="font-medium text-[#C4C7C5]">{currentTask.repo}</span>
                 <span>·</span>
                 <span className="text-[#A8C7FA] font-mono">{currentTask.branch}</span>
                 <span>·</span>
@@ -261,7 +312,7 @@ export function WorkspaceView({
             </div>
 
             {/* Cancel Button if running */}
-            {(currentTask.status === 'running' || currentTask.status === 'queued') && (
+            {isRunning && (
               <button
                 onClick={() => onCancelTask(currentTask.id)}
                 className="px-3 py-1.5 bg-[#3C1E20] hover:bg-[#5C2B2E] border border-[#F2B8B5]/30 text-[#F2B8B5] rounded-md text-xs transition flex items-center gap-1.5"
@@ -272,23 +323,39 @@ export function WorkspaceView({
             )}
           </div>
 
+          {/* Live Progress Banner when running */}
+          {isRunning && (
+            <div className="bg-[#131314] px-4 py-3 border-b border-[#333538] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs">
+                <Loader2 size={15} className="animate-spin text-[#A8C7FA]" />
+                <span className="text-[#8E918F]">Current Activity:</span>
+                <span className="text-[#E3E3E3] font-medium">
+                  {latestEvent?.message || 'Executing step in background...'}
+                </span>
+              </div>
+              <span className="text-[11px] font-mono text-[#A8C7FA] bg-[#004A77]/50 px-2.5 py-0.5 rounded-full self-start sm:self-auto">
+                Step {currentTask.events?.length || 1} of 8
+              </span>
+            </div>
+          )}
+
           {/* Tab Strip */}
           <div className="flex border-b border-[#333538] bg-[#131314] px-4 overflow-x-auto">
             <button
-              onClick={() => setActiveTab('brief')}
-              className={`py-3 px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition select-none ${
-                activeTab === 'brief'
+              onClick={() => setActiveTab('timeline')}
+              className={`py-3 px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition select-none flex-shrink-0 ${
+                activeTab === 'timeline'
                   ? 'border-[#A8C7FA] text-[#A8C7FA]'
                   : 'border-transparent text-[#8E918F] hover:text-[#E3E3E3]'
               }`}
             >
-              <MessageSquare size={14} />
-              <span>Response</span>
+              <Activity size={14} />
+              <span>Step-by-Step Progress ({currentTask.events?.length || 0})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('diff')}
-              className={`py-3 px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition select-none ${
+              className={`py-3 px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition select-none flex-shrink-0 ${
                 activeTab === 'diff'
                   ? 'border-[#A8C7FA] text-[#A8C7FA]'
                   : 'border-transparent text-[#8E918F] hover:text-[#E3E3E3]'
@@ -299,21 +366,21 @@ export function WorkspaceView({
             </button>
 
             <button
-              onClick={() => setActiveTab('timeline')}
-              className={`py-3 px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition select-none ${
-                activeTab === 'timeline'
+              onClick={() => setActiveTab('brief')}
+              className={`py-3 px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition select-none flex-shrink-0 ${
+                activeTab === 'brief'
                   ? 'border-[#A8C7FA] text-[#A8C7FA]'
                   : 'border-transparent text-[#8E918F] hover:text-[#E3E3E3]'
               }`}
             >
-              <Activity size={14} />
-              <span>Activity Center ({currentTask.events?.length || 0})</span>
+              <MessageSquare size={14} />
+              <span>AI Output</span>
             </button>
 
             {currentTask.finalReport && (
               <button
                 onClick={() => setActiveTab('report')}
-                className={`py-3 px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition select-none ${
+                className={`py-3 px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition select-none flex-shrink-0 ${
                   activeTab === 'report'
                     ? 'border-[#A8C7FA] text-[#A8C7FA]'
                     : 'border-transparent text-[#8E918F] hover:text-[#E3E3E3]'
@@ -327,6 +394,23 @@ export function WorkspaceView({
 
           {/* Tab Content Panes */}
           <div className="p-4 sm:p-6 min-h-[300px]">
+            {activeTab === 'timeline' && (
+              <ActivityTimeline
+                events={currentTask.events || []}
+                isLive={isRunning}
+              />
+            )}
+
+            {activeTab === 'diff' && (
+              <DiffViewer
+                changes={currentTask.proposedChanges || []}
+                onApplyChanges={() => onApplyChanges(currentTask.id)}
+                isApplying={isApplyingChanges}
+                appliedBranch={currentTask.branchName}
+                prUrl={currentTask.prUrl}
+              />
+            )}
+
             {activeTab === 'brief' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -343,28 +427,11 @@ export function WorkspaceView({
                 <div className="bg-[#131314] border border-[#333538] rounded-lg p-4 font-mono text-xs text-[#E3E3E3] leading-relaxed whitespace-pre-wrap max-h-[500px] overflow-y-auto">
                   {currentTask.rawResponse || (
                     <div className="text-[#8E918F] py-8 text-center font-sans">
-                      Analyzing repository structure and synthesizing solution...
+                      {isRunning ? 'Synthesizing response and code patches...' : 'No response generated.'}
                     </div>
                   )}
                 </div>
               </div>
-            )}
-
-            {activeTab === 'diff' && (
-              <DiffViewer
-                changes={currentTask.proposedChanges || []}
-                onApplyChanges={() => onApplyChanges(currentTask.id)}
-                isApplying={isApplyingChanges}
-                appliedBranch={currentTask.branchName}
-                prUrl={currentTask.prUrl}
-              />
-            )}
-
-            {activeTab === 'timeline' && (
-              <ActivityTimeline
-                events={currentTask.events || []}
-                isLive={currentTask.status === 'running' || currentTask.status === 'queued'}
-              />
             )}
 
             {activeTab === 'report' && currentTask.finalReport && (
@@ -380,10 +447,10 @@ export function WorkspaceView({
         </div>
       ) : (
         <div className="p-12 text-center bg-[#1E1F20] border border-[#333538] rounded-xl">
-          <Terminal size={36} className="mx-auto text-[#8E918F] mb-3" />
+          <Code2 size={36} className="mx-auto text-[#8E918F] mb-3" />
           <h3 className="text-sm font-semibold text-[#F0F4F9]">Workspace Ready</h3>
           <p className="text-xs text-[#8E918F] mt-1 max-w-md mx-auto">
-            Select a target repository above, configure the personality, and describe your coding task to begin.
+            Select a target repository above, pick your preferred model, and describe your coding task to begin.
           </p>
         </div>
       )}
